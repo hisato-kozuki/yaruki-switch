@@ -3,14 +3,40 @@ const button = document.getElementById("circleButton");
 const elapsedDisplay = document.getElementById("elapsed");
 const resultDisplay = document.getElementById("result");
 
-const POST_URL = "https://example.com/api/receive"; // 送信先URLを必要に応じて変更
+const POST_URL = "https://example.com/api/receive"; // ←送信先URLを適宜変更
 let timerInterval = null;
 
-// 🔹 枠（小さな長方形）を生成
+// 🔹 枠を5×5に配置
+const rects = [];
 for (let i = 0; i < 25; i++) {
   const rect = document.createElement("div");
   rect.classList.add("rect");
+  rect.dataset.index = i;
   frame.appendChild(rect);
+  rects.push(rect);
+}
+
+// 🔹 十字型配置のインデックスを定義
+const crossIndexes = [2, 7, 10, 11, 12, 13, 14, 17, 22];
+
+// 🔹 通常配置に戻す関数
+function resetGrid() {
+  rects.forEach((rect) => {
+    rect.classList.remove("cross");
+    rect.style.transform = "translate(0, 0) scale(1)";
+  });
+}
+
+// 🔹 十字型配置に変形する関数
+function toCrossShape() {
+  rects.forEach((rect, i) => {
+    if (crossIndexes.includes(i)) {
+      rect.classList.add("cross");
+      rect.style.transform = "scale(1.3)";
+    } else {
+      rect.style.transform = "scale(0)";
+    }
+  });
 }
 
 // 🔹 経過時間更新関数
@@ -33,8 +59,7 @@ button.addEventListener("click", async () => {
     const now = new Date().toISOString();
     localStorage.setItem("stored_date", now);
 
-    // 枠を十字型に変化
-    frame.classList.add("cross");
+    toCrossShape();
     button.style.background = "radial-gradient(circle at 30% 30%, #f44336, #b71c1c)";
     resultDisplay.textContent = "ボタンが押されました。計測開始。";
 
@@ -72,7 +97,7 @@ button.addEventListener("click", async () => {
     }
 
     // 枠・ボタンを初期化
-    frame.classList.remove("cross");
+    resetGrid();
     button.style.background = "radial-gradient(circle at 30% 30%, #4CAF50, #2E7D32)";
 
     // localStorageをクリアしてクリック状態をリセット
@@ -81,9 +106,9 @@ button.addEventListener("click", async () => {
   }
 });
 
-// ページ読み込み時に経過時間表示を更新
+// ページ読み込み時に復元
 if (localStorage.getItem("stored_date")) {
-  frame.classList.add("cross");
+  toCrossShape();
   button.style.background = "radial-gradient(circle at 30% 30%, #f44336, #b71c1c)";
   timerInterval = setInterval(updateElapsedTime, 1000);
 }
