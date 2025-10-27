@@ -3,55 +3,95 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ボタンアニメーション</title>
-  <link rel="stylesheet" href="style.css">
+  <title>ボタンアニメーション拡張版</title>
   <style>
     body {
       background: #f0f0f0;
       height: 100vh;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      font-family: sans-serif;
+      font-family: "Segoe UI", sans-serif;
     }
 
-    .button-container {
-      position: relative;
-      display: inline-block;
-      padding: 20px;
-      border: 6px solid #4CAF50; /* 緑色 */
-      border-radius: 15px;
-      transition: all 0.4s ease;
-      background: #fff;
-      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    /* 枠全体 */
+    .frame {
+      display: grid;
+      grid-template-columns: repeat(5, 30px);
+      grid-gap: 8px;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 40px;
+      transition: all 0.6s ease;
     }
 
-    .button-container.active {
-      border-color: #f44336; /* 赤色 */
-      transform: scale(1.05) rotate(2deg);
+    /* 枠を構成する小さな長方形 */
+    .rect {
+      width: 30px;
+      height: 15px;
+      background-color: #4CAF50;
+      border-radius: 4px;
+      transition: all 0.6s ease;
     }
 
-    .fancy-button {
-      background: linear-gradient(135deg, #4CAF50, #81C784);
+    /* 十字型配置時 */
+    .frame.cross {
+      grid-template-columns: repeat(5, 30px);
+      grid-template-rows: repeat(5, 15px);
+      width: max-content;
+    }
+
+    .frame.cross .rect {
+      background-color: #f44336;
+    }
+
+    /* ボタン（円形） */
+    .circle-button {
+      background: radial-gradient(circle at 30% 30%, #4CAF50, #2E7D32);
       border: none;
+      border-radius: 50%;
+      width: 100px;
+      height: 100px;
       color: white;
-      padding: 15px 40px;
       font-size: 20px;
-      border-radius: 10px;
+      font-weight: bold;
       cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 5px 0 #388E3C;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 0 #388E3C;
     }
 
-    .fancy-button:active {
-      transform: translateY(4px);
-      box-shadow: 0 1px 0 #388E3C;
+    .circle-button:active {
+      transform: translateY(6px);
+      box-shadow: 0 2px 0 #388E3C;
+    }
+
+    /* 情報表示スペース */
+    #info {
+      margin-top: 20px;
+      text-align: center;
+      color: #333;
+    }
+
+    #elapsed {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    #result {
+      font-size: 16px;
+      color: #555;
     }
   </style>
 </head>
 <body>
-  <div class="button-container" id="buttonFrame">
-    <button id="mainButton" class="fancy-button">クリック</button>
+
+  <div class="frame" id="frame"></div>
+  <button id="circleButton" class="circle-button">クリック</button>
+
+  <div id="info">
+    <div id="elapsed">経過時間: 0秒</div>
+    <div id="result">送信結果: （未送信）</div>
   </div>
 
   <script src="main.js"></script>
