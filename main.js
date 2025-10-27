@@ -2,9 +2,25 @@ const frame = document.getElementById("frame");
 const button = document.getElementById("circleButton");
 const elapsedDisplay = document.getElementById("elapsed");
 const resultDisplay = document.getElementById("result");
+const urlInput = document.getElementById("postUrl");
+const saveUrlBtn = document.getElementById("saveUrlBtn");
 
-const POST_URL = "https://example.com/api/receive"; // ←送信先URLを適宜変更
 let timerInterval = null;
+
+// 🔹 送信URLの保存と復元
+if (localStorage.getItem("post_url")) {
+  urlInput.value = localStorage.getItem("post_url");
+}
+
+saveUrlBtn.addEventListener("click", () => {
+  const url = urlInput.value.trim();
+  if (url) {
+    localStorage.setItem("post_url", url);
+    resultDisplay.textContent = "送信先URLを保存しました。";
+  } else {
+    resultDisplay.textContent = "URLを入力してください。";
+  }
+});
 
 // 🔹 枠を5×5に配置
 const rects = [];
@@ -16,30 +32,28 @@ for (let i = 0; i < 25; i++) {
   rects.push(rect);
 }
 
-// 🔹 十字型配置のインデックスを定義
+// 十字型になるインデックス
 const crossIndexes = [2, 7, 10, 11, 12, 13, 14, 17, 22];
 
-// 🔹 通常配置に戻す関数
 function resetGrid() {
-  rects.forEach((rect) => {
-    rect.classList.remove("cross");
-    rect.style.transform = "translate(0, 0) scale(1)";
+  rects.forEach((r) => {
+    r.classList.remove("cross");
+    r.style.transform = "translate(0,0) scale(1)";
   });
 }
 
-// 🔹 十字型配置に変形する関数
 function toCrossShape() {
-  rects.forEach((rect, i) => {
+  rects.forEach((r, i) => {
     if (crossIndexes.includes(i)) {
-      rect.classList.add("cross");
-      rect.style.transform = "scale(1.3)";
+      r.classList.add("cross");
+      r.style.transform = "scale(1.3)";
     } else {
-      rect.style.transform = "scale(0)";
+      r.style.transform = "scale(0)";
     }
   });
 }
 
-// 🔹 経過時間更新関数
+// 🔹 経過時間更新
 function updateElapsedTime() {
   const start = localStorage.getItem("stored_date");
   if (!start) {
@@ -50,65 +64,71 @@ function updateElapsedTime() {
   elapsedDisplay.textContent = `経過時間: ${elapsed} 秒`;
 }
 
-// 🔹 クリックイベント
+// 🔹 ボタンクリックイベント
 button.addEventListener("click", async () => {
   const storedDate = localStorage.getItem("stored_date");
 
-  // 🔸 1回目クリック時
+  // 送信先URLの取得
+  const POST_URL = localStorage.getItem("post_url");
+  if (!POST_URL) {
+    resultDisplay.textContent = "送信先URLを設定してください。";
+    return;
+  }
+
+  // 1回目クリック
   if (!storedDate) {
     const now = new Date().toISOString();
     localStorage.setItem("stored_date", now);
-
     toCrossShape();
     button.style.background = "radial-gradient(circle at 30% 30%, #f44336, #b71c1c)";
-    resultDisplay.textContent = "ボタンが押されました。計測開始。";
+    resultDisplay.textContent = "計測開始しました。";
 
-    // 経過時間をリアルタイムで表示
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(updateElapsedTime, 1000);
   }
-
-  // 🔸 2回目クリック時
+  // 2回目クリック
   else {
     const startDate = localStorage.getItem("stored_date");
     const endDate = new Date().toISOString();
-
     const payload = {
       title: "hhhhh",
       date_start: startDate,
       date_end: endDate
     };
 
-    // 経過時間停止
     if (timerInterval) clearInterval(timerInterval);
 
-    // データ送信
     try {
-      const response = await fetch(POST_URL, {
+      const res = await fetch(POST_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
-      const resultText = response.ok ? "送信成功！" : `送信失敗 (${response.status})`;
-      resultDisplay.textContent = `送信結果: ${resultText}`;
-    } catch (error) {
-      resultDisplay.textContent = `送信エラー: ${error.message}`;
+      const txt = res.ok ? "送信成功！" : `送信失敗 (${res.status})`;
+      resultDisplay.textContent = `送信結果: ${txt}`;
+    } catch (err) {
+      resultDisplay.textContent = `オフラインまたは送信エラー: ${err.message}`;
     }
 
-    // 枠・ボタンを初期化
+    // 初期化
     resetGrid();
     button.style.background = "radial-gradient(circle at 30% 30%, #4CAF50, #2E7D32)";
-
-    // localStorageをクリアしてクリック状態をリセット
     localStorage.removeItem("stored_date");
     elapsedDisplay.textContent = "経過時間: 0秒";
   }
 });
 
-// ページ読み込み時に復元
+// ページロード時の状態復元
 if (localStorage.getItem("stored_date")) {
   toCrossShape();
   button.style.background = "radial-gradient(circle at 30% 30%, #f44336, #b71c1c)";
   timerInterval = setInterval(updateElapsedTime, 1000);
+}
+
+// PWA の service worker 登録
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js")
+    .then(() => console.log("Service Worker 登録完了"))
+    .catch((err) => console.error("SW登録エラー:", err));
 }

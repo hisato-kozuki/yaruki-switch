@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>十字型ボタンアニメーション</title>
+  <title>十字型ボタンアプリ（PWA対応）</title>
+
+  <!-- PWA マニフェスト -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4CAF50">
+
   <style>
     body {
       background: #f0f0f0;
@@ -13,9 +18,46 @@
       justify-content: center;
       align-items: center;
       font-family: "Segoe UI", sans-serif;
+      margin: 0;
     }
 
-    /* 枠全体 */
+    h1 {
+      font-size: 22px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    /* URL入力フォーム */
+    #urlForm {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    #postUrl {
+      width: 260px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #aaa;
+      font-size: 14px;
+    }
+
+    #saveUrlBtn {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    #saveUrlBtn:hover {
+      background-color: #45a049;
+    }
+
+    /* 枠エリア */
     .frame {
       display: grid;
       grid-template-columns: repeat(5, 30px);
@@ -23,26 +65,23 @@
       grid-gap: 6px;
       justify-content: center;
       align-items: center;
-      margin-bottom: 40px;
-      position: relative;
+      margin-bottom: 30px;
       transition: all 0.6s ease;
     }
 
-    /* 枠を構成する小さな長方形 */
     .rect {
       width: 30px;
       height: 15px;
       background-color: #4CAF50;
       border-radius: 4px;
       transition: all 0.6s ease;
-      transform-origin: center;
     }
 
     .rect.cross {
       background-color: #f44336;
     }
 
-    /* ボタン（円形） */
+    /* 円形ボタン */
     .circle-button {
       background: radial-gradient(circle at 30% 30%, #4CAF50, #2E7D32);
       border: none;
@@ -62,11 +101,9 @@
       box-shadow: 0 2px 0 #388E3C;
     }
 
-    /* 情報表示スペース */
     #info {
       margin-top: 20px;
       text-align: center;
-      color: #333;
     }
 
     #elapsed {
@@ -81,6 +118,14 @@
   </style>
 </head>
 <body>
+
+  <h1>十字型ボタンアプリ</h1>
+
+  <!-- URL入力フォーム -->
+  <form id="urlForm" onsubmit="return false;">
+    <input id="postUrl" type="text" placeholder="送信先URLを入力" />
+    <button id="saveUrlBtn">URLを保存</button>
+  </form>
 
   <div class="frame" id="frame"></div>
   <button id="circleButton" class="circle-button">クリック</button>
