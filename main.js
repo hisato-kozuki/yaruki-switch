@@ -1,134 +1,100 @@
+const button = document.getElementById("mainButton");
 const frame = document.getElementById("frame");
-const button = document.getElementById("circleButton");
-const elapsedDisplay = document.getElementById("elapsed");
-const resultDisplay = document.getElementById("result");
-const urlInput = document.getElementById("postUrl");
-const saveUrlBtn = document.getElementById("saveUrlBtn");
+const elapsedText = document.getElementById("elapsed");
+const resultText = document.getElementById("result");
+const urlForm = document.getElementById("url-form");
+const apiUrlInput = document.getElementById("apiUrl");
+
+// URLを保存・ロード
+apiUrlInput.value = localStorage.getItem("apiUrl") || "";
+urlForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const url = apiUrlInput.value.trim();
+  if (url) {
+    localStorage.setItem("apiUrl", url);
+    alert("URLを保存しました。");
+  }
+});
 
 let timerInterval = null;
 
-// 🔹 送信URLの保存と復元
-if (localStorage.getItem("post_url")) {
-  urlInput.value = localStorage.getItem("post_url");
+// 経過時間の更新
+function startTimer() {
+  const startDate = new Date(localStorage.getItem("stored_date"));
+  timerInterval = setInterval(() => {
+    const now = new Date();
+    const elapsedSec = Math.floor((now - startDate) / 1000);
+    elapsedText.textContent = elapsedSec;
+  }, 1000);
 }
 
-saveUrlBtn.addEventListener("click", () => {
-  const url = urlInput.value.trim();
-  if (url) {
-    localStorage.setItem("post_url", url);
-    resultDisplay.textContent = "送信先URLを保存しました。";
-  } else {
-    resultDisplay.textContent = "URLを入力してください。";
-  }
-});
-
-// 🔹 枠を5×5に配置
-const rects = [];
-for (let i = 0; i < 25; i++) {
-  const rect = document.createElement("div");
-  rect.classList.add("rect");
-  rect.dataset.index = i;
-  frame.appendChild(rect);
-  rects.push(rect);
+function stopTimer() {
+  if (timerInterval) clearInterval(timerInterval);
 }
 
-// 十字型になるインデックス
-const crossIndexes = [2, 7, 10, 11, 12, 13, 14, 17, 22];
-
-function resetGrid() {
-  rects.forEach((r) => {
-    r.classList.remove("cross");
-    r.style.transform = "translate(0,0) scale(1)";
-  });
-}
-
-function toCrossShape() {
-  rects.forEach((r, i) => {
-    if (crossIndexes.includes(i)) {
-      r.classList.add("cross");
-      r.style.transform = "scale(1.3)";
-    } else {
-      r.style.transform = "scale(0)";
-    }
-  });
-}
-
-// 🔹 経過時間更新
-function updateElapsedTime() {
-  const start = localStorage.getItem("stored_date");
-  if (!start) {
-    elapsedDisplay.textContent = "経過時間: 0秒";
-    return;
-  }
-  const elapsed = Math.floor((Date.now() - new Date(start)) / 1000);
-  elapsedDisplay.textContent = `経過時間: ${elapsed} 秒`;
-}
-
-// 🔹 ボタンクリックイベント
+// ボタンの動作
 button.addEventListener("click", async () => {
   const storedDate = localStorage.getItem("stored_date");
+  const apiUrl = localStorage.getItem("apiUrl");
 
-  // 送信先URLの取得
-  const POST_URL = localStorage.getItem("post_url");
-  if (!POST_URL) {
-    resultDisplay.textContent = "送信先URLを設定してください。";
-    return;
-  }
-
-  // 1回目クリック
+  // 初回クリック
   if (!storedDate) {
-    const now = new Date().toISOString();
-    localStorage.setItem("stored_date", now);
-    toCrossShape();
-    button.style.background = "radial-gradient(circle at 30% 30%, #f44336, #b71c1c)";
-    resultDisplay.textContent = "計測開始しました。";
+    frame.classList.add("active");
+    const now = new Date();
+    localStorage.setItem("stored_date", now.toISOString());
+    startTimer();
+    resultText.textContent = "開始しました。";
+  } else {
+    // 2回目クリック（送信処理）
+    frame.classList.remove("active");
+    stopTimer();
 
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(updateElapsedTime, 1000);
-  }
-  // 2回目クリック
-  else {
-    const startDate = localStorage.getItem("stored_date");
-    const endDate = new Date().toISOString();
+    const startDate = new Date(localStorage.getItem("stored_date"));
+    const now = new Date();
+    const elapsed = Math.floor((now - startDate) / 1000);
+
     const payload = {
-      title: "hhhhh",
-      date_start: startDate,
-      date_end: endDate
+      type: "post",
+      datas: [
+        {
+          title: "sssss" + elapsed.toString().padStart(5, "0"),
+          date_start: now,
+          date_end: now,
+          color: 3
+        }
+      ]
     };
 
-    if (timerInterval) clearInterval(timerInterval);
-
-    try {
-      const res = await fetch(POST_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const txt = res.ok ? "送信成功！" : `送信失敗 (${res.status})`;
-      resultDisplay.textContent = `送信結果: ${txt}`;
-    } catch (err) {
-      resultDisplay.textContent = `オフラインまたは送信エラー: ${err.message}`;
+    if (!apiUrl) {
+      resultText.textContent = "⚠️ 送信先URLが設定されていません。";
+      localStorage.removeItem("stored_date");
+      return;
     }
 
-    // 初期化
-    resetGrid();
-    button.style.background = "radial-gradient(circle at 30% 30%, #4CAF50, #2E7D32)";
+    try {
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ data: JSON.stringify(payload) })
+      });
+
+      const text = await response.text();
+      resultText.textContent = `送信成功: ${text}`;
+    } catch (err) {
+      resultText.textContent = `送信失敗: ${err}`;
+    }
+
+    // クリック判定リセット
     localStorage.removeItem("stored_date");
-    elapsedDisplay.textContent = "経過時間: 0秒";
+    elapsedText.textContent = "0";
   }
 });
 
-// ページロード時の状態復元
-if (localStorage.getItem("stored_date")) {
-  toCrossShape();
-  button.style.background = "radial-gradient(circle at 30% 30%, #f44336, #b71c1c)";
-  timerInterval = setInterval(updateElapsedTime, 1000);
-}
-
-// PWA の service worker 登録
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js")
-    .then(() => console.log("Service Worker 登録完了"))
-    .catch((err) => console.error("SW登録エラー:", err));
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("service-worker.js")
+      .then(() => console.log("Service Worker 登録成功"))
+      .catch((err) => console.log("SW登録失敗:", err));
+  });
 }

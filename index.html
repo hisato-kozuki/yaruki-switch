@@ -3,136 +3,116 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>十字型ボタンアプリ（PWA対応）</title>
-
-  <!-- PWA マニフェスト -->
+  <title>PWAボタンデモ</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4CAF50">
-
   <style>
     body {
       background: #f0f0f0;
       height: 100vh;
+      margin: 0;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      font-family: "Segoe UI", sans-serif;
-      margin: 0;
+      justify-content: center;
+      font-family: sans-serif;
     }
 
-    h1 {
-      font-size: 22px;
-      color: #333;
-      margin-bottom: 10px;
-    }
-
-    /* URL入力フォーム */
-    #urlForm {
+    .frame-container {
+      position: relative;
+      width: 220px;
+      height: 220px;
       display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 30px;
-    }
-
-    #postUrl {
-      width: 260px;
-      padding: 8px 10px;
-      border-radius: 6px;
-      border: 1px solid #aaa;
-      font-size: 14px;
-    }
-
-    #saveUrlBtn {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    #saveUrlBtn:hover {
-      background-color: #45a049;
-    }
-
-    /* 枠エリア */
-    .frame {
-      display: grid;
-      grid-template-columns: repeat(5, 30px);
-      grid-template-rows: repeat(5, 15px);
-      grid-gap: 6px;
+      flex-wrap: wrap;
       justify-content: center;
       align-items: center;
-      margin-bottom: 30px;
+      gap: 5px;
       transition: all 0.6s ease;
     }
 
     .rect {
-      width: 30px;
-      height: 15px;
+      width: 50px;
+      height: 100px;
       background-color: #4CAF50;
-      border-radius: 4px;
+      border-radius: 8px;
       transition: all 0.6s ease;
     }
 
-    .rect.cross {
-      background-color: #f44336;
-    }
-
-    /* 円形ボタン */
     .circle-button {
-      background: radial-gradient(circle at 30% 30%, #4CAF50, #2E7D32);
-      border: none;
+      position: absolute;
+      width: 90px;
+      height: 90px;
       border-radius: 50%;
-      width: 100px;
-      height: 100px;
+      background: linear-gradient(135deg, #4CAF50, #81C784);
+      border: none;
       color: white;
-      font-size: 20px;
-      font-weight: bold;
+      font-size: 22px;
       cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 8px 0 #388E3C;
+      transition: transform 0.2s ease, background 0.3s;
+      box-shadow: 0 5px 0 #388E3C;
     }
 
     .circle-button:active {
-      transform: translateY(6px);
-      box-shadow: 0 2px 0 #388E3C;
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 #388E3C;
     }
 
-    #info {
+    .frame-container.active .rect {
+      background-color: #f44336;
+      position: absolute;
+    }
+
+    .frame-container.active .rect:nth-child(1) { transform: translateY(-110px); }
+    .frame-container.active .rect:nth-child(2) { transform: translateY(110px); }
+    .frame-container.active .rect:nth-child(3) { transform: translateX(-110px) rotate(90deg); }
+    .frame-container.active .rect:nth-child(4) { transform: translateX(110px) rotate(90deg); }
+
+    #output {
       margin-top: 20px;
+      font-size: 18px;
       text-align: center;
     }
 
-    #elapsed {
-      font-size: 18px;
-      margin-bottom: 10px;
+    #url-form {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
     }
 
-    #result {
+    #apiUrl {
+      width: 250px;
+      padding: 8px;
       font-size: 16px;
-      color: #555;
+    }
+
+    #saveUrl {
+      padding: 8px 16px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-
-  <h1>十字型ボタンアプリ</h1>
-
-  <!-- URL入力フォーム -->
-  <form id="urlForm" onsubmit="return false;">
-    <input id="postUrl" type="text" placeholder="送信先URLを入力" />
-    <button id="saveUrlBtn">URLを保存</button>
+  <form id="url-form">
+    <input id="apiUrl" type="text" placeholder="送信先URLを入力" />
+    <button type="submit" id="saveUrl">URL保存</button>
   </form>
 
-  <div class="frame" id="frame"></div>
-  <button id="circleButton" class="circle-button">クリック</button>
+  <div class="frame-container" id="frame">
+    <div class="rect"></div>
+    <div class="rect"></div>
+    <div class="rect"></div>
+    <div class="rect"></div>
+    <button class="circle-button" id="mainButton">●</button>
+  </div>
 
-  <div id="info">
-    <div id="elapsed">経過時間: 0秒</div>
-    <div id="result">送信結果: （未送信）</div>
+  <div id="output">
+    <p>経過時間: <span id="elapsed">0</span> 秒</p>
+    <p id="result"></p>
   </div>
 
   <script src="main.js"></script>
