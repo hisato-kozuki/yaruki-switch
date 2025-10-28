@@ -5,8 +5,8 @@ const resultText = document.getElementById("result");
 const urlForm = document.getElementById("url-form");
 const apiUrlInput = document.getElementById("apiUrl");
 
-// URLを保存・ロード
 apiUrlInput.value = localStorage.getItem("apiUrl") || "";
+
 urlForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const url = apiUrlInput.value.trim();
@@ -27,31 +27,35 @@ function startTimer() {
     elapsedText.textContent = elapsedSec;
   }, 1000);
 }
-
 function stopTimer() {
   if (timerInterval) clearInterval(timerInterval);
 }
 
-// ボタンの動作
+// ボタン動作
 button.addEventListener("click", async () => {
   const storedDate = localStorage.getItem("stored_date");
   const apiUrl = localStorage.getItem("apiUrl");
 
-  // 初回クリック
+  // === 1回目クリック ===
   if (!storedDate) {
-    frame.classList.add("active");
-    const now = new Date();
-    localStorage.setItem("stored_date", now.toISOString());
+    localStorage.setItem("stored_date", new Date().toISOString());
     startTimer();
-    resultText.textContent = "開始しました。";
-  } else {
-    // 2回目クリック（送信処理）
-    frame.classList.remove("active");
-    stopTimer();
 
+    // アニメーション変化：**十字型に変形**
+    button.classList.add("pressed");
+    frame.classList.add("cross");   // ← ここを add に変更（十字）
+    resultText.textContent = "開始しました。";
+
+  // === 2回目クリック ===
+  } else {
+    stopTimer();
     const startDate = new Date(localStorage.getItem("stored_date"));
     const now = new Date();
     const elapsed = Math.floor((now - startDate) / 1000);
+
+    // ボタン戻す & 枠を◇（元）に戻す
+    button.classList.remove("pressed");
+    frame.classList.remove("cross"); // ← remove で元（45°傾いた二重正方形）に戻す
 
     const payload = {
       type: "post",
@@ -75,7 +79,7 @@ button.addEventListener("click", async () => {
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ data: JSON.stringify(payload) })
+        body: JSON.stringify(payload)
       });
 
       const text = await response.text();
@@ -84,12 +88,12 @@ button.addEventListener("click", async () => {
       resultText.textContent = `送信失敗: ${err}`;
     }
 
-    // クリック判定リセット
     localStorage.removeItem("stored_date");
     elapsedText.textContent = "0";
   }
 });
 
+// === PWA Service Worker 登録 ===
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
