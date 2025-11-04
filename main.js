@@ -1,5 +1,6 @@
 const button = document.getElementById("mainButton");
 const frame = document.getElementById("frame");
+const time = document.getElementById("time");
 const elapsedText = document.getElementById("elapsed");
 const resultText = document.getElementById("result");
 const urlForm = document.getElementById("url-form");
@@ -17,6 +18,7 @@ urlForm.addEventListener("submit", (e) => {
 });
 
 let timerInterval = null;
+let clicked = false;
 
 // 経過時間の更新
 function startTimer() {
@@ -38,13 +40,26 @@ button.addEventListener("click", async () => {
 
   // === 1回目クリック ===
   if (!storedDate) {
-    localStorage.setItem("stored_date", new Date().toISOString());
-    startTimer();
-
-    // アニメーション変化：**十字型に変形**
-    button.classList.add("pressed");
-    frame.classList.add("cross");   // ← ここを add に変更（十字）
-    resultText.textContent = "開始しました。";
+    if(clicked){
+      if(button.classList.contains("pressed")){
+        localStorage.setItem("stored_date", new Date().toISOString());
+        time.classList.add("up");
+        startTimer();
+        resultText.textContent = "開始しました。";
+      }
+    } else {
+      clicked = true;
+      setTimeout(() => clicked = false, 300);
+      resultText.textContent = "";
+      if(button.classList.contains("pressed")){
+        button.classList.remove("pressed");
+        frame.classList.remove("cross");
+      } else {
+        // アニメーション変化：**十字型に変形**
+        button.classList.add("pressed");
+        frame.classList.add("cross");   // ← ここを add に変更（十字）
+      }
+    }
 
   // === 2回目クリック ===
   } else {
@@ -52,10 +67,12 @@ button.addEventListener("click", async () => {
     const startDate = new Date(localStorage.getItem("stored_date"));
     const now = new Date();
     const elapsed = Math.floor((now - startDate) / 1000);
+    localStorage.removeItem("stored_date");
 
     // ボタン戻す & 枠を◇（元）に戻す
     button.classList.remove("pressed");
     frame.classList.remove("cross"); // ← remove で元（45°傾いた二重正方形）に戻す
+    time.classList.remove("up");
 
     const payload = {
       type: "post",
@@ -88,10 +105,18 @@ button.addEventListener("click", async () => {
       resultText.textContent = `送信失敗: ${err}`;
     }
 
-    localStorage.removeItem("stored_date");
     elapsedText.textContent = "0";
   }
 });
+
+// ページ読み込み時に経過時間表示を更新
+if (localStorage.getItem("stored_date")) {
+  time.classList.add("up");
+  startTimer();
+  resultText.textContent = "開始しました。";
+  button.classList.add("pressed");
+  frame.classList.add("cross");
+}
 
 // === PWA Service Worker 登録 ===
 if ("serviceWorker" in navigator) {
